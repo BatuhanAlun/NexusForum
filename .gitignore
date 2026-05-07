@@ -1,0 +1,27 @@
+# --- .NET Ignores ---
+**/bin/
+**/obj/
+*.user
+*.suo
+*.shellbash
+
+# --- Node / Angular Ignores ---
+**/node_modules/
+**/dist/
+**/.angular/
+**/tmp/
+**/out-tsc/
+npm-debug.log
+yarn-error.log
+
+# --- IDEs ---
+.idea/
+.vscode/
+# Keep your VS Code launch settings if you want to share them
+!.vscode/launch.json
+!.vscode/tasks.json
+
+# --- OS Files ---
+.DS_Store
+Thumbs.db
+VulnForum.sln
