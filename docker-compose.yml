@@ -1,0 +1,49 @@
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: nexusforum
+      POSTGRES_USER: nexus
+      POSTGRES_PASSWORD: nexuspassword
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nexus -d nexusforum"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: NexusForum.Api/Dockerfile
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      # Override connection string to target the db container (not localhost).
+      ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=nexusforum;Username=nexus;Password=nexuspassword"
+      Jwt__Key: "compose-dev-secret-key-change-in-production-32ch"
+      Jwt__Issuer: "NexusForum"
+      Jwt__Audience: "NexusForum"
+      Jwt__ExpiryMinutes: "60"
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  client:
+    build:
+      context: ./NexusForum-Client
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "4200:80"
+    depends_on:
+      - api
+
+volumes:
+  pgdata:

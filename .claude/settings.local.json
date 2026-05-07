@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"d:\\\\workspace\\\\github.com\\\\Compose\\\\VulnForum\" -Force)",
+      "Bash(Select-Object Mode, Name)",
+      "Bash(dotnet build *)",
+      "Bash(dotnet restore *)",
+      "Bash(dotnet list *)",
+      "Bash(findstr /i \"openapi\")",
+      "PowerShell($dlls = Get-ChildItem -Recurse -Filter 'Microsoft.AspNetCore.OpenApi.dll' -Path \"$env:USERPROFILE\\\\.nuget\" | Sort-Object LastWriteTime -Descending; $dlls | Select-Object FullName | Format-Table -AutoSize)"
+    ]
+  }
+}
