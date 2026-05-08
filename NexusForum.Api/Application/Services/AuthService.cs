@@ -13,11 +13,13 @@ namespace NexusForum.Api.Application.Services;
 public class AuthService : IAuthService
 {
     private readonly IUserRepository _userRepository;
+    private readonly IRevokedTokenRepository _revokedTokenRepository;
     private readonly IConfiguration _configuration;
 
-    public AuthService(IUserRepository userRepository, IConfiguration configuration)
+    public AuthService(IUserRepository userRepository, IRevokedTokenRepository revokedTokenRepository, IConfiguration configuration)
     {
         _userRepository = userRepository;
+        _revokedTokenRepository = revokedTokenRepository;
         _configuration = configuration;
     }
 
@@ -89,5 +91,11 @@ public class AuthService : IAuthService
             signingCredentials: creds);
 
         return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
+    public async Task LogoutAsync(string jti, DateTime tokenExpiry)
+    {
+        await _revokedTokenRepository.RevokeAsync(jti, tokenExpiry);
+        await _revokedTokenRepository.SaveChangesAsync();
     }
 }

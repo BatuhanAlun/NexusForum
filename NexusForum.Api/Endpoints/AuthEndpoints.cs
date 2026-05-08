@@ -1,3 +1,4 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using FluentValidation;
 using NexusForum.Api.Application.DTOs.Auth;
@@ -65,6 +66,25 @@ public static class AuthEndpoints
         .WithName("Me")
         .Produces(200)
         .ProducesProblem(401);
+
+        // Revokes the current token by storing its JTI — the JWT event handler rejects it on future requests.
+        group.MapPost("/logout", async (HttpContext ctx, IAuthService authService) =>
+        {
+            var jti = ctx.User.FindFirstValue(JwtRegisteredClaimNames.Jti)
+                      ?? ctx.User.FindFirstValue("jti");
+
+            if (jti is null) return Results.Problem("Invalid token.", statusCode: 400);
+
+            var expClaim = ctx.User.FindFirstValue("exp");
+            var expiry = expClaim is not null
+                ? DateTimeOffset.FromUnixTimeSeconds(long.Parse(expClaim)).UtcDateTime
+                : DateTime.UtcNow.AddHours(1);
+
+            await authService.LogoutAsync(jti, expiry);
+            return Results.Ok(new { message = "Logged out successfully." });
+        })
+        .RequireAuthorization()
+        .WithName("Logout");
 
         return app;
     }

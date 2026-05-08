@@ -21,13 +21,24 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 // ── Dependency Injection ────────────────────────────────────────────────────
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+builder.Services.AddScoped<IPostRepository, PostRepository>();
+builder.Services.AddScoped<ICommentRepository, CommentRepository>();
+builder.Services.AddScoped<IRevokedTokenRepository, RevokedTokenRepository>();
+builder.Services.AddScoped<IPostMemberRepository, PostMemberRepository>();
+
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.AddScoped<IPostService, PostService>();
+builder.Services.AddScoped<ICommentService, CommentService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IPrivateThreadService, PrivateThreadService>();
 
 // Scans the assembly for all AbstractValidator<T> implementations automatically.
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
 // ── Authentication ──────────────────────────────────────────────────────────
-// Disable the legacy claim type map so JWT claim names (sub, email, role) are preserved as-is.
+// Disable the legacy claim type map so JWT claim names are preserved as-is.
 JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
 var jwtKey = builder.Configuration["Jwt:Key"]
@@ -45,11 +56,25 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidIssuer = builder.Configuration["Jwt:Issuer"],
             ValidAudience = builder.Configuration["Jwt:Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
-            // Clock skew default is 5 min — set to zero for strict expiry enforcement.
             ClockSkew = TimeSpan.Zero,
-            // Map short "role" claim to ClaimTypes.Role so RequireAuthorization(roles:) works.
             RoleClaimType = "role",
             NameClaimType = JwtRegisteredClaimNames.UniqueName
+        };
+
+        // Reject tokens whose JTI appears in the RevokedTokens table (logout support).
+        options.Events = new JwtBearerEvents
+        {
+            OnTokenValidated = async context =>
+            {
+                var jti = context.Principal?.FindFirst("jti")?.Value;
+                if (jti is null) return;
+
+                var repo = context.HttpContext.RequestServices
+                    .GetRequiredService<IRevokedTokenRepository>();
+
+                if (await repo.IsRevokedAsync(jti))
+                    context.Fail("Token has been revoked.");
+            }
         };
     });
 
@@ -60,14 +85,13 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("Angular", policy =>
         policy.WithOrigins(
-                "http://localhost:4200",  // ng serve (dev)
-                "http://localhost:80")    // Docker nginx
+                "http://localhost:4200",
+                "http://localhost:80")
               .AllowAnyHeader()
               .AllowAnyMethod());
 });
 
 // ── OpenAPI ─────────────────────────────────────────────────────────────────
-// Two transformers: document-level adds the Bearer scheme; operation-level locks protected endpoints.
 builder.Services.AddOpenApi(options =>
 {
     options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
@@ -77,17 +101,18 @@ builder.Services.AddOpenApi(options =>
 // ── Build ───────────────────────────────────────────────────────────────────
 var app = builder.Build();
 
-// Apply pending EF migrations on startup so Docker containers self-configure.
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await db.Database.MigrateAsync();
+    await SeedData.SeedAsync(db);
+    if (app.Environment.IsDevelopment())
+        await DevSeedData.SeedAsync(db);
 }
 
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
-    // Scalar UI available at /scalar — interactive docs with JWT auth support.
     app.MapScalarApiReference(options => options
         .WithTitle("NexusForum API")
         .WithTheme(ScalarTheme.DeepSpace)
@@ -99,5 +124,10 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapAuthEndpoints();
+app.MapCategoryEndpoints();
+app.MapPostEndpoints();
+app.MapCommentEndpoints();
+app.MapUserEndpoints();
+app.MapPrivateThreadEndpoints();
 
 app.Run();

@@ -18,6 +18,9 @@ public class UserRepository : IUserRepository
     public async Task<User?> GetByEmailAsync(string email) =>
         await _context.Users.FirstOrDefaultAsync(u => u.Email == email.ToLowerInvariant());
 
+    public async Task<User?> GetByUsernameAsync(string username) =>
+        await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
+
     public async Task<bool> ExistsByEmailAsync(string email) =>
         await _context.Users.AnyAsync(u => u.Email == email.ToLowerInvariant());
 
