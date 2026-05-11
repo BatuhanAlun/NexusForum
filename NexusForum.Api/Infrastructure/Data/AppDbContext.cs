@@ -14,6 +14,8 @@ public class AppDbContext : DbContext
     public DbSet<Comment> Comments => Set<Comment>();
     public DbSet<RevokedToken> RevokedTokens => Set<RevokedToken>();
     public DbSet<PostMember> PostMembers => Set<PostMember>();
+    public DbSet<InviteLink> InviteLinks => Set<InviteLink>();
+    public DbSet<CommentReaction> CommentReactions => Set<CommentReaction>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

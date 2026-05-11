@@ -4,12 +4,13 @@ import { Router, RouterLink } from '@angular/router';
 import { Category } from '../../core/models/category.models';
 import { CategoryService } from '../../core/services/category.service';
 import { PostService } from '../../core/services/post.service';
+import { MarkdownPipe } from '../../shared/markdown/markdown.pipe';
 import { apiError } from '../../core/utils/category.utils';
 
 @Component({
   selector: 'app-post-form',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, MarkdownPipe],
   template: `
     <div class="form-page">
       <div class="form-card">
@@ -57,6 +58,13 @@ import { apiError } from '../../core/utils/category.utils';
               }
             </div>
 
+            @if (form.get('content')?.value) {
+              <div class="form-group preview-group">
+                <label>Preview</label>
+                <div class="preview-body markdown-body" [innerHTML]="form.get('content')!.value | markdown"></div>
+              </div>
+            }
+
             @if (!isEdit) {
               <div class="form-group form-group-row">
                 <label class="toggle-label">
@@ -96,6 +104,12 @@ import { apiError } from '../../core/utils/category.utils';
     .toggle-label { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 500; }
     .toggle-label input[type="checkbox"] { width: 1rem; height: 1rem; accent-color: var(--accent); }
     .toggle-hint { font-size: 0.8125rem; color: var(--fg-muted); }
+    .preview-group { border-top: 1px solid var(--border-subtle); padding-top: 1rem; }
+    .preview-body {
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 0.875rem 1rem; min-height: 60px;
+      line-height: 1.7; font-size: 0.9375rem;
+    }
   `],
 })
 export class PostFormComponent implements OnChanges {

@@ -5,5 +5,7 @@ public record CommentDto(
     string Content,
     Guid AuthorId,
     string AuthorUsername,
+    int UpCount,
+    int DownCount,
     DateTime CreatedAt,
     DateTime? UpdatedAt);

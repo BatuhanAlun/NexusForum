@@ -41,6 +41,7 @@ public class PostRepository : IPostRepository
             .Include(p => p.Author)
             .Include(p => p.Category)
             .Include(p => p.Comments).ThenInclude(c => c.Author)
+            .Include(p => p.Comments).ThenInclude(c => c.Reactions)
             .Include(p => p.Members).ThenInclude(m => m.User)
             .FirstOrDefaultAsync(p => p.Id == id);
 

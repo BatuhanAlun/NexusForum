@@ -36,7 +36,7 @@ public class CommentService : ICommentService
         // Reload to get Author navigation populated.
         var saved = await _commentRepo.GetByIdAsync(comment.Id);
         return Result<CommentDto>.Success(
-            new CommentDto(saved!.Id, saved.Content, saved.AuthorId, saved.Author.Username, saved.CreatedAt, saved.UpdatedAt), 201);
+            new CommentDto(saved!.Id, saved.Content, saved.AuthorId, saved.Author.Username, 0, 0, saved.CreatedAt, saved.UpdatedAt), 201);
     }
 
     public async Task<Result<CommentDto>> UpdateAsync(int id, UpdateCommentRequest request, Guid requesterId, bool isAdmin)
@@ -50,7 +50,7 @@ public class CommentService : ICommentService
 
         await _commentRepo.SaveChangesAsync();
         return Result<CommentDto>.Success(
-            new CommentDto(comment.Id, comment.Content, comment.AuthorId, comment.Author.Username, comment.CreatedAt, comment.UpdatedAt));
+            new CommentDto(comment.Id, comment.Content, comment.AuthorId, comment.Author.Username, 0, 0, comment.CreatedAt, comment.UpdatedAt));
     }
 
     public async Task<Result<bool>> DeleteAsync(int id, Guid requesterId, bool isAdmin)

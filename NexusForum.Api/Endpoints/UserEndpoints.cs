@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using NexusForum.Api.Application.DTOs.Users;
 using NexusForum.Api.Application.Interfaces.Services;
 
 namespace NexusForum.Api.Endpoints;
@@ -15,6 +17,20 @@ public static class UserEndpoints
         })
         .AllowAnonymous()
         .WithName("GetUserProfile");
+
+        group.MapPut("/me", async (
+            UpdateProfileRequest request,
+            IUserService service,
+            ClaimsPrincipal user) =>
+        {
+            var userId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var result = await service.UpdateProfileAsync(userId, request);
+            return result.IsSuccess
+                ? Results.Ok(result.Data)
+                : Results.Problem(result.Error, statusCode: result.StatusCode);
+        })
+        .RequireAuthorization()
+        .WithName("UpdateProfile");
 
         return app;
     }

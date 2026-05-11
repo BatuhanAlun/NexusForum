@@ -35,6 +35,13 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .HasDefaultValue(UserRole.Member)
             .HasMaxLength(20);
 
+        builder.Property(u => u.Bio)
+            .HasMaxLength(500)
+            .HasDefaultValue(string.Empty);
+
+        builder.Property(u => u.AvatarUrl)
+            .HasMaxLength(512);
+
         builder.Property(u => u.CreatedAt)
             .IsRequired();
     }

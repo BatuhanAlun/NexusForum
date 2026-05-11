@@ -33,6 +33,10 @@ builder.Services.AddScoped<IPostService, PostService>();
 builder.Services.AddScoped<ICommentService, CommentService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IPrivateThreadService, PrivateThreadService>();
+builder.Services.AddScoped<IInviteLinkRepository, InviteLinkRepository>();
+builder.Services.AddScoped<IInviteLinkService, InviteLinkService>();
+builder.Services.AddScoped<ICommentReactionRepository, CommentReactionRepository>();
+builder.Services.AddScoped<IReactionService, ReactionService>();
 
 // Scans the assembly for all AbstractValidator<T> implementations automatically.
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
@@ -129,5 +133,7 @@ app.MapPostEndpoints();
 app.MapCommentEndpoints();
 app.MapUserEndpoints();
 app.MapPrivateThreadEndpoints();
+app.MapAdminEndpoints();
+app.MapInviteLinkEndpoints();
 
 app.Run();

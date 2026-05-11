@@ -5,6 +5,8 @@ using NexusForum.Api.Application.Interfaces.Services;
 
 namespace NexusForum.Api.Endpoints;
 
+file record ReactRequest(string ReactionType);
+
 public static class CommentEndpoints
 {
     public static IEndpointRouteBuilder MapCommentEndpoints(this IEndpointRouteBuilder app)
@@ -50,6 +52,21 @@ public static class CommentEndpoints
         })
         .RequireAuthorization()
         .WithName("UpdateComment");
+
+        comments.MapPost("/{id:int}/react", async (
+            int id,
+            ReactRequest request,
+            IReactionService reactionService,
+            ClaimsPrincipal user) =>
+        {
+            var userId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var result = await reactionService.ReactAsync(id, userId, request.ReactionType);
+            return result.IsSuccess
+                ? Results.Ok(result.Data)
+                : Results.Problem(result.Error, statusCode: result.StatusCode);
+        })
+        .RequireAuthorization()
+        .WithName("ReactToComment");
 
         comments.MapDelete("/{id:int}", async (
             int id,

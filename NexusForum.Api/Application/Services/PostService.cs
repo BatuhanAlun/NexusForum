@@ -94,7 +94,10 @@ public class PostService : IPostService
     private static PostDto ToDto(Post p) => new(
         p.Id, p.Title, p.Content, p.AuthorId, p.Author.Username,
         p.CategoryId, p.Category.Name, p.IsPrivate, IsRestricted: false,
-        p.Comments.Select(c => new CommentDto(c.Id, c.Content, c.AuthorId, c.Author.Username, c.CreatedAt, c.UpdatedAt)).ToList(),
+        p.Comments.Select(c => new CommentDto(c.Id, c.Content, c.AuthorId, c.Author.Username,
+            c.Reactions.Count(r => r.ReactionType == "up"),
+            c.Reactions.Count(r => r.ReactionType == "down"),
+            c.CreatedAt, c.UpdatedAt)).ToList(),
         p.Members.Select(m => new PostMemberDto(m.UserId, m.User.Username, m.InvitedAt)).ToList(),
         p.CreatedAt, p.UpdatedAt);
 

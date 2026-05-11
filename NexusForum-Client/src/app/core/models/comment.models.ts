@@ -3,6 +3,8 @@ export interface CommentDto {
   content: string;
   authorId: string;
   authorUsername: string;
+  upCount: number;
+  downCount: number;
   postId: number;
   createdAt: string;
   updatedAt?: string;

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NexusForum.Api.Infrastructure.Data;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace NexusForum.Api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260511104809_InviteLinks")]
+    partial class InviteLinks
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -80,37 +83,6 @@ namespace NexusForum.Api.Migrations
                     b.HasIndex("PostId");
 
                     b.ToTable("Comments");
-                });
-
-            modelBuilder.Entity("NexusForum.Api.Domain.Entities.CommentReaction", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("CommentId")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("ReactionType")
-                        .IsRequired()
-                        .HasMaxLength(4)
-                        .HasColumnType("character varying(4)");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CommentId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("CommentReactions", (string)null);
                 });
 
             modelBuilder.Entity("NexusForum.Api.Domain.Entities.InviteLink", b =>
@@ -318,25 +290,6 @@ namespace NexusForum.Api.Migrations
                     b.Navigation("Post");
                 });
 
-            modelBuilder.Entity("NexusForum.Api.Domain.Entities.CommentReaction", b =>
-                {
-                    b.HasOne("NexusForum.Api.Domain.Entities.Comment", "Comment")
-                        .WithMany("Reactions")
-                        .HasForeignKey("CommentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("NexusForum.Api.Domain.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Comment");
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("NexusForum.Api.Domain.Entities.InviteLink", b =>
                 {
                     b.HasOne("NexusForum.Api.Domain.Entities.User", "CreatedBy")
@@ -405,11 +358,6 @@ namespace NexusForum.Api.Migrations
             modelBuilder.Entity("NexusForum.Api.Domain.Entities.Category", b =>
                 {
                     b.Navigation("Posts");
-                });
-
-            modelBuilder.Entity("NexusForum.Api.Domain.Entities.Comment", b =>
-                {
-                    b.Navigation("Reactions");
                 });
 
             modelBuilder.Entity("NexusForum.Api.Domain.Entities.Post", b =>

@@ -40,4 +40,16 @@ export class PostService {
   removeMember(postId: number, userId: string): Observable<void> {
     return this.http.delete<void>(`/api/posts/${postId}/members/${userId}`);
   }
+
+  generateInviteLink(postId: number): Observable<{ token: string }> {
+    return this.http.post<{ token: string }>(`/api/posts/${postId}/invite-link`, {});
+  }
+
+  redeemInvite(token: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`/api/invites/${token}/redeem`, {});
+  }
+
+  reactToComment(commentId: number, reactionType: 'up' | 'down'): Observable<{ upCount: number; downCount: number; myReaction: string | null }> {
+    return this.http.post<{ upCount: number; downCount: number; myReaction: string | null }>(`/api/comments/${commentId}/react`, { reactionType });
+  }
 }

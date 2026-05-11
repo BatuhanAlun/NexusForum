@@ -6,12 +6,13 @@ import { PostDto, PostMemberDto } from '../../core/models/post.models';
 import { AuthService } from '../../core/services/auth.service';
 import { CommentService } from '../../core/services/comment.service';
 import { PostService } from '../../core/services/post.service';
+import { MarkdownPipe } from '../../shared/markdown/markdown.pipe';
 import { apiError, categoryColor, timeAgo } from '../../core/utils/category.utils';
 
 @Component({
   selector: 'app-post-detail',
   standalone: true,
-  imports: [RouterLink, FormsModule],
+  imports: [RouterLink, FormsModule, MarkdownPipe],
   template: `
     <div class="detail-page">
       @if (loading()) {
@@ -64,7 +65,7 @@ import { apiError, categoryColor, timeAgo } from '../../core/utils/category.util
                 </div>
               </div>
             } @else {
-              <div class="post-content">{{ post()!.content }}</div>
+              <div class="post-content markdown-body" [innerHTML]="post()!.content | markdown"></div>
             }
           </article>
 
@@ -104,6 +105,18 @@ import { apiError, categoryColor, timeAgo } from '../../core/utils/category.util
                   {{ inviting() ? 'Inviting…' : 'Invite' }}
                 </button>
               </form>
+
+              <div class="invite-link-section">
+                <button class="btn btn-ghost btn-sm" (click)="generateInviteLink()" [disabled]="generatingLink()">
+                  {{ generatingLink() ? 'Generating…' : '🔗 Generate Invite Link' }}
+                </button>
+                @if (inviteToken()) {
+                  <div class="invite-token-box">
+                    <span class="invite-token-label">Shareable token:</span>
+                    <code class="invite-token">{{ inviteToken() }}</code>
+                  </div>
+                }
+              </div>
             </section>
           }
 
@@ -140,8 +153,16 @@ import { apiError, categoryColor, timeAgo } from '../../core/utils/category.util
                       </div>
                     </div>
                   } @else {
-                    <p class="comment-content">{{ comment.content }}</p>
+                    <div class="comment-content markdown-body" [innerHTML]="comment.content | markdown"></div>
                   }
+                  <div class="reaction-row">
+                    <button class="reaction-btn up" [class.active]="myReactions().get(comment.id) === 'up'" (click)="react(comment, 'up')">
+                      👍 <span>{{ comment.upCount }}</span>
+                    </button>
+                    <button class="reaction-btn down" [class.active]="myReactions().get(comment.id) === 'down'" (click)="react(comment, 'down')">
+                      👎 <span>{{ comment.downCount }}</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             }
@@ -295,6 +316,33 @@ import { apiError, categoryColor, timeAgo } from '../../core/utils/category.util
       font-size: 0.875rem; color: var(--fg-muted); margin-top: 0.5rem;
     }
     .post-container { display: flex; flex-direction: column; }
+
+    .reaction-row { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
+    .reaction-btn {
+      display: flex; align-items: center; gap: 0.25rem;
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 0.2rem 0.6rem;
+      font-size: 0.8125rem; color: var(--fg-muted); cursor: pointer; transition: all 0.15s;
+    }
+    .reaction-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .reaction-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(88,166,255,.1); font-weight: 600; }
+
+    .invite-link-section { margin-top: 0.875rem; padding-top: 0.875rem; border-top: 1px solid var(--border-subtle); }
+    .invite-token-box {
+      display: flex; align-items: center; gap: 0.625rem; margin-top: 0.625rem;
+      padding: 0.5rem 0.75rem; background: var(--bg-base);
+      border: 1px solid var(--border); border-radius: var(--radius);
+    }
+    .invite-token-label { font-size: 0.75rem; color: var(--fg-muted); white-space: nowrap; }
+    .invite-token { font-family: monospace; font-size: 0.9rem; color: var(--accent); letter-spacing: 0.05em; }
+
+    .markdown-body :global(pre) {
+      background: var(--bg-elevated); padding: 0.75rem 1rem;
+      border-radius: var(--radius); overflow-x: auto; margin: 0.75rem 0;
+    }
+    .markdown-body :global(code) { font-family: monospace; font-size: 0.9em; }
+    .markdown-body :global(p) { margin: 0.5rem 0; line-height: 1.7; }
+    .markdown-body :global(a) { color: var(--accent); }
   `],
 })
 export class PostDetailComponent implements OnChanges {
@@ -310,6 +358,7 @@ export class PostDetailComponent implements OnChanges {
   post = signal<PostDto | null>(null);
   loading = signal(true);
   editingId = signal<number | null>(null);
+  myReactions = signal<Map<number, 'up' | 'down'>>(new Map());
   editContent = '';
   newComment = '';
   submitting = signal(false);
@@ -317,9 +366,14 @@ export class PostDetailComponent implements OnChanges {
   inviteUsername = '';
   inviting = signal(false);
   memberError = signal<string | null>(null);
+  inviteToken = signal<string | null>(null);
+  generatingLink = signal(false);
 
   ngOnChanges(): void {
-    if (this.id) this.loadPost(Number(this.id));
+    if (this.id) {
+      this.myReactions.set(new Map());
+      this.loadPost(Number(this.id));
+    }
   }
 
   loadPost(id: number): void {
@@ -379,6 +433,34 @@ export class PostDetailComponent implements OnChanges {
         this.post.update(p => p ? { ...p, members: p.members.filter(m => m.userId !== member.userId) } : p);
       },
       error: (err) => this.memberError.set(apiError(err)),
+    });
+  }
+
+  generateInviteLink(): void {
+    this.generatingLink.set(true);
+    this.postService.generateInviteLink(this.post()!.id).subscribe({
+      next: res => { this.inviteToken.set(res.token); this.generatingLink.set(false); },
+      error: () => this.generatingLink.set(false),
+    });
+  }
+
+  react(comment: CommentDto, type: 'up' | 'down'): void {
+    if (!this.auth.isLoggedIn()) return;
+    this.postService.reactToComment(comment.id, type).subscribe({
+      next: counts => {
+        this.post.update(p => p ? {
+          ...p,
+          comments: p.comments.map(c => c.id === comment.id
+            ? { ...c, upCount: counts.upCount, downCount: counts.downCount }
+            : c),
+        } : p);
+        this.myReactions.update(m => {
+          const next = new Map(m);
+          if (counts.myReaction) next.set(comment.id, counts.myReaction as 'up' | 'down');
+          else next.delete(comment.id);
+          return next;
+        });
+      },
     });
   }
 
