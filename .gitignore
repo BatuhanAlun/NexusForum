@@ -13,6 +13,7 @@
 **/out-tsc/
 npm-debug.log
 yarn-error.log
+.claude/
 
 # --- IDEs ---
 .idea/
