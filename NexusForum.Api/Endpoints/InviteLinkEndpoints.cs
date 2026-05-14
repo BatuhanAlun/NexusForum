@@ -36,6 +36,7 @@ public static class InviteLinkEndpoints
                 : Results.Problem(result.Error, statusCode: result.StatusCode);
         })
         .RequireAuthorization()
+        .RequireRateLimiting("invite")
         .WithTags("Private Threads")
         .WithName("RedeemInviteLink");
 

@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using NexusForum.Api.Application.DTOs.Users;
 using NexusForum.Api.Application.Interfaces.Services;
+using NexusForum.Api.Domain.Interfaces.Repositories;
 
 namespace NexusForum.Api.Endpoints;
 
@@ -17,6 +18,14 @@ public static class UserEndpoints
         })
         .AllowAnonymous()
         .WithName("GetUserProfile");
+
+        group.MapGet("/by-id/{id:guid}", async (Guid id, IUserRepository repo) =>
+        {
+            var user = await repo.GetByIdAsync(id);
+            return user is null ? Results.NotFound() : Results.Ok(user);
+        })
+        .AllowAnonymous()
+        .WithName("GetUserById");
 
         group.MapPut("/me", async (
             UpdateProfileRequest request,

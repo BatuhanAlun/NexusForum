@@ -1,7 +1,9 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
+using System.Threading.RateLimiting;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using NexusForum.Api.Application.Interfaces.Services;
@@ -84,6 +86,52 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
+// ── Rate Limiting ────────────────────────────────────────────────────────────
+// INTENTIONAL VULNERABILITY (CWE-290 + CWE-799):
+// Partition key trusts the client-supplied X-Forwarded-For header without validation.
+// Attacker rotates this header per request to bypass the limit entirely.
+builder.Services.AddRateLimiter(options =>
+{
+    options.OnRejected = async (context, token) =>
+    {
+        context.HttpContext.Response.StatusCode = 429;
+        context.HttpContext.Response.Headers.RetryAfter = "60";
+        await context.HttpContext.Response.WriteAsync("Too many requests. Try again later.", token);
+    };
+
+    options.AddPolicy("auth", context =>
+    {
+        // FLAW: reads attacker-controlled header as the rate-limit key
+        var ip = context.Request.Headers["X-Forwarded-For"].FirstOrDefault()
+                 ?? context.Connection.RemoteIpAddress?.ToString()
+                 ?? "unknown";
+
+        return RateLimitPartition.GetFixedWindowLimiter(ip, _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 5,
+            Window = TimeSpan.FromMinutes(1),
+            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+            QueueLimit = 0,
+        });
+    });
+
+    options.AddPolicy("invite", context =>
+    {
+        // Same flaw — invite redemption rate limit also bypassable
+        var ip = context.Request.Headers["X-Forwarded-For"].FirstOrDefault()
+                 ?? context.Connection.RemoteIpAddress?.ToString()
+                 ?? "unknown";
+
+        return RateLimitPartition.GetFixedWindowLimiter("invite_" + ip, _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 10,
+            Window = TimeSpan.FromMinutes(1),
+            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+            QueueLimit = 0,
+        });
+    });
+});
+
 // ── CORS ────────────────────────────────────────────────────────────────────
 builder.Services.AddCors(options =>
 {
@@ -124,8 +172,11 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors("Angular");
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.UseStaticFiles();
 
 app.MapAuthEndpoints();
 app.MapCategoryEndpoints();
@@ -135,5 +186,9 @@ app.MapUserEndpoints();
 app.MapPrivateThreadEndpoints();
 app.MapAdminEndpoints();
 app.MapInviteLinkEndpoints();
+app.MapSearchEndpoints();
+app.MapFileEndpoints();
+app.MapPreviewEndpoints();
+app.MapImportEndpoints();
 
 app.Run();

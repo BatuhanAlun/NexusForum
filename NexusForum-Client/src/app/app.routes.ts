@@ -32,5 +32,9 @@ export const routes: Routes = [
     path: 'users/:username',
     loadComponent: () => import('./features/user-profile/user-profile.component').then(m => m.UserProfileComponent),
   },
+  {
+    path: 'error',
+    loadComponent: () => import('./features/error/error.component').then(m => m.ErrorComponent),
+  },
   { path: '**', redirectTo: '' },
 ];

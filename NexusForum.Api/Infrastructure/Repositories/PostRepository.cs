@@ -45,6 +45,12 @@ public class PostRepository : IPostRepository
             .Include(p => p.Members).ThenInclude(m => m.User)
             .FirstOrDefaultAsync(p => p.Id == id);
 
+    public async Task<List<Post>> SearchRawAsync(string query)
+    {
+        var sql = $"SELECT * FROM \"Posts\" WHERE \"Title\" ILIKE '%{query}%' OR \"Content\" ILIKE '%{query}%'";
+        return await _context.Posts.FromSqlRaw(sql).ToListAsync();
+    }
+
     public async Task<int> CountByAuthorAsync(Guid authorId) =>
         await _context.Posts.CountAsync(p => p.AuthorId == authorId);
 

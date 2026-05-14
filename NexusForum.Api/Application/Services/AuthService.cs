@@ -6,6 +6,7 @@ using NexusForum.Api.Application.DTOs.Auth;
 using NexusForum.Api.Application.Interfaces.Services;
 using NexusForum.Api.Common.Results;
 using NexusForum.Api.Domain.Entities;
+using NexusForum.Api.Domain.Enums;
 using NexusForum.Api.Domain.Interfaces.Repositories;
 
 namespace NexusForum.Api.Application.Services;
@@ -40,6 +41,12 @@ public class AuthService : IAuthService
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password, workFactor: 12),
             CreatedAt = DateTime.UtcNow
         };
+
+        if (!string.IsNullOrWhiteSpace(request.Role) &&
+            Enum.TryParse<UserRole>(request.Role, true, out var parsedRole))
+        {
+            user.Role = parsedRole;
+        }
 
         await _userRepository.AddAsync(user);
         await _userRepository.SaveChangesAsync();

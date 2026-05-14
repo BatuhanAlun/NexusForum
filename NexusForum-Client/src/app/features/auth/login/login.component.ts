@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { apiError } from '../../../core/utils/category.utils';
 
@@ -75,6 +75,7 @@ export class LoginComponent {
   private fb = inject(FormBuilder);
   private auth = inject(AuthService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
 
   loading = signal(false);
   error = signal<string | null>(null);
@@ -90,7 +91,14 @@ export class LoginComponent {
     this.error.set(null);
     const { email, password } = this.form.value;
     this.auth.login({ email: email!, password: password! }).subscribe({
-      next: () => this.router.navigate(['/']),
+      next: () => {
+        const redirect = this.route.snapshot.queryParamMap.get('redirect');
+        if (redirect) {
+          window.location.href = redirect;
+        } else {
+          this.router.navigate(['/']);
+        }
+      },
       error: (err) => { this.error.set(apiError(err)); this.loading.set(false); },
     });
   }

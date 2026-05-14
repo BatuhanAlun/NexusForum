@@ -28,6 +28,7 @@ public static class AuthEndpoints
                 : Results.Problem(result.Error, statusCode: result.StatusCode);
         })
         .AllowAnonymous()
+        .RequireRateLimiting("auth")
         .WithName("Register")
         .Produces<AuthResponse>(201)
         .ProducesValidationProblem()
@@ -48,6 +49,7 @@ public static class AuthEndpoints
                 : Results.Problem(result.Error, statusCode: result.StatusCode);
         })
         .AllowAnonymous()
+        .RequireRateLimiting("auth")
         .WithName("Login")
         .Produces<AuthResponse>()
         .ProducesValidationProblem()
@@ -66,6 +68,10 @@ public static class AuthEndpoints
         .WithName("Me")
         .Produces(200)
         .ProducesProblem(401);
+
+        group.MapGet("/redirect", (string returnUrl) => Results.Redirect(returnUrl))
+            .AllowAnonymous()
+            .WithName("AuthRedirect");
 
         // Revokes the current token by storing its JTI — the JWT event handler rejects it on future requests.
         group.MapPost("/logout", async (HttpContext ctx, IAuthService authService) =>
