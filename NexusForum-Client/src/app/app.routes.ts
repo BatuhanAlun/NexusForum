@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
+import { adminGuard } from './core/guards/admin.guard';
 
 export const routes: Routes = [
   {
@@ -35,6 +36,11 @@ export const routes: Routes = [
   {
     path: 'error',
     loadComponent: () => import('./features/error/error.component').then(m => m.ErrorComponent),
+  },
+  {
+    path: 'pentester',
+    loadComponent: () => import('./features/pentester/pentester.component').then(m => m.PentesterComponent),
+    canActivate: [adminGuard],
   },
   { path: '**', redirectTo: '' },
 ];

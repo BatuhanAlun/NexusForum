@@ -39,6 +39,7 @@ builder.Services.AddScoped<IInviteLinkRepository, InviteLinkRepository>();
 builder.Services.AddScoped<IInviteLinkService, InviteLinkService>();
 builder.Services.AddScoped<ICommentReactionRepository, CommentReactionRepository>();
 builder.Services.AddScoped<IReactionService, ReactionService>();
+builder.Services.AddSingleton<PentesterRunner>();
 
 // Scans the assembly for all AbstractValidator<T> implementations automatically.
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
@@ -70,6 +71,18 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         // Reject tokens whose JTI appears in the RevokedTokens table (logout support).
         options.Events = new JwtBearerEvents
         {
+            OnMessageReceived = ctx =>
+            {
+                // SSE EventSource can't set custom headers; accept token from query string
+                // for /api/pentester/stream/* only.
+                if (string.IsNullOrEmpty(ctx.Token) &&
+                    ctx.Request.Path.StartsWithSegments("/api/pentester/stream"))
+                {
+                    var qs = ctx.Request.Query["access_token"].FirstOrDefault();
+                    if (!string.IsNullOrEmpty(qs)) ctx.Token = qs;
+                }
+                return Task.CompletedTask;
+            },
             OnTokenValidated = async context =>
             {
                 var jti = context.Principal?.FindFirst("jti")?.Value;
@@ -190,5 +203,6 @@ app.MapSearchEndpoints();
 app.MapFileEndpoints();
 app.MapPreviewEndpoints();
 app.MapImportEndpoints();
+app.MapPentesterEndpoints();
 
 app.Run();

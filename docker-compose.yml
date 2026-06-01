@@ -45,5 +45,34 @@ services:
     depends_on:
       - api
 
+  zap:
+    image: zaproxy/zap-stable
+    restart: unless-stopped
+    command: >
+      zap.sh -daemon -host 0.0.0.0 -port 8090
+      -config api.key=${ZAP_API_KEY:-changeme}
+      -config api.addrs.addr.name=.* -config api.addrs.addr.regex=true
+    # Not exposed to host; only reachable on the compose network by the pentester.
+
+  pentester:
+    build:
+      context: ./Pentester
+      dockerfile: Dockerfile
+    profiles: ["pentest"]   # opt-in: docker-compose --profile pentest up pentester
+    environment:
+      TARGET_URL: "http://api:8080"
+      SCANNER_URL: "http://zap:8090"
+      SCANNER_BACKEND: "zap"
+      ZAP_API_KEY: "${ZAP_API_KEY:-changeme}"
+      ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-}"
+      MODEL_BACKEND: "${MODEL_BACKEND:-anthropic}"
+      ANTHROPIC_MODEL: "${ANTHROPIC_MODEL:-claude-opus-4-7}"
+    # IMPORTANT: NO volume mounting the repo. Only a write volume for run outputs.
+    volumes:
+      - ./Pentester/runs:/app/runs
+    depends_on:
+      - api
+      - zap
+
 volumes:
   pgdata:
