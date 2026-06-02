@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("NexusForum.Api")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+48cefa2775cdcab0214776e53b38899e7799dc8a")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+4f0214f85e959c637e9e4337b4a7a6a519914d7b")]
 [assembly: System.Reflection.AssemblyProductAttribute("NexusForum.Api")]
 [assembly: System.Reflection.AssemblyTitleAttribute("NexusForum.Api")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

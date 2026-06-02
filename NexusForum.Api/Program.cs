@@ -39,7 +39,6 @@ builder.Services.AddScoped<IInviteLinkRepository, InviteLinkRepository>();
 builder.Services.AddScoped<IInviteLinkService, InviteLinkService>();
 builder.Services.AddScoped<ICommentReactionRepository, CommentReactionRepository>();
 builder.Services.AddScoped<IReactionService, ReactionService>();
-builder.Services.AddSingleton<PentesterRunner>();
 
 // Scans the assembly for all AbstractValidator<T> implementations automatically.
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
@@ -207,6 +206,5 @@ app.MapSearchEndpoints();
 app.MapFileEndpoints();
 app.MapPreviewEndpoints();
 app.MapImportEndpoints();
-app.MapPentesterEndpoints();
 
 app.Run();
