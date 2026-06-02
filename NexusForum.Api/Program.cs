@@ -54,6 +54,10 @@ var jwtKey = builder.Configuration["Jwt:Key"]
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
+        // .NET 10 default handler is JsonWebTokenHandler — disable inbound claim remapping
+        // so short claim names ("role", "sub", etc.) are preserved as-is.
+        options.MapInboundClaims = false;
+
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,

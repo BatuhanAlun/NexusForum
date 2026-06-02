@@ -25,12 +25,32 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
       # Override connection string to target the db container (not localhost).
       ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=nexusforum;Username=nexus;Password=nexuspassword"
-      Jwt__Key: "compose-dev-secret-key-change-in-production-32ch"
+      # Jwt__Key intentionally NOT set here — appsettings.Development.json supplies
+      # the weak key. Traversal exploit leaks the same key the API actually uses.
       Jwt__Issuer: "NexusForum"
       Jwt__Audience: "NexusForum"
       Jwt__ExpiryMinutes: "60"
+      # Pentester orchestration — api spawns the pentester container via host docker socket.
+      PENTESTER_LAUNCH: "docker"
+      PENTESTER_NETWORK: "vulnforum_default"
+      # Host path (must be absolute on host) for run output persistence.
+      # On Windows Docker Desktop, set this to your repo's Pentester/runs path.
+      PENTESTER_RUNS_HOST_DIR: "${PENTESTER_RUNS_HOST_DIR:-}"
+      ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-}"
+      ANTHROPIC_MODEL: "${ANTHROPIC_MODEL:-claude-opus-4-7}"
+      MODEL_BACKEND: "${MODEL_BACKEND:-anthropic}"
+      MODEL_MAX_TOKENS: "${MODEL_MAX_TOKENS:-8192}"
+      PENTEST_MAX_TURNS: "${PENTEST_MAX_TURNS:-18}"
+      LITELLM_MODEL: "${LITELLM_MODEL:-}"
+      OPENAI_API_KEY: "${OPENAI_API_KEY:-}"
+      GROQ_API_KEY: "${GROQ_API_KEY:-}"
+      GEMINI_API_KEY: "${GEMINI_API_KEY:-}"
+      SCANNER_URL: "http://zap:8090"
+      ZAP_API_KEY: "${ZAP_API_KEY:-changeme}"
     ports:
       - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       db:
         condition: service_healthy
@@ -58,6 +78,7 @@ services:
     build:
       context: ./Pentester
       dockerfile: Dockerfile
+    image: vulnforum-pentester           # explicit name — api spawns this image
     profiles: ["pentest"]   # opt-in: docker-compose --profile pentest up pentester
     environment:
       TARGET_URL: "http://api:8080"

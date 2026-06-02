@@ -69,6 +69,19 @@ public static class AuthEndpoints
         .Produces(200)
         .ProducesProblem(401);
 
+        // TEMP DEBUG — dumps every claim the server sees + IsInRole results. Remove later.
+        group.MapGet("/debug/claims", (ClaimsPrincipal user) => Results.Ok(new
+        {
+            IsAuthenticated = user.Identity?.IsAuthenticated,
+            AuthType = user.Identity?.AuthenticationType,
+            RoleClaimType = (user.Identity as ClaimsIdentity)?.RoleClaimType,
+            NameClaimType = (user.Identity as ClaimsIdentity)?.NameClaimType,
+            IsInRoleAdmin = user.IsInRole("Admin"),
+            AllClaims = user.Claims.Select(c => new { c.Type, c.Value })
+        }))
+        .RequireAuthorization()
+        .WithName("DebugClaims");
+
         group.MapGet("/redirect", (string returnUrl) => Results.Redirect(returnUrl))
             .AllowAnonymous()
             .WithName("AuthRedirect");
