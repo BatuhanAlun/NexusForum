@@ -25,6 +25,11 @@ import { AuthService } from '../../core/services/auth.service';
         <div class="nav-actions">
           @if (auth.isLoggedIn()) {
             <a routerLink="/posts/new" class="btn btn-primary btn-sm">+ New Post</a>
+            @if (auth.isAdmin()) {
+              <a routerLink="/pentester" routerLinkActive="active" class="btn btn-ghost btn-sm pentester-btn" title="Run pentest">
+                🛡 Pentester
+              </a>
+            }
             <a [routerLink]="['/users', auth.user()?.username]" class="user-chip">
               <span class="chip-avatar">{{ auth.user()?.username?.[0]?.toUpperCase() }}</span>
               <span class="chip-name">{{ auth.user()?.username }}</span>
@@ -81,6 +86,14 @@ import { AuthService } from '../../core/services/auth.service';
       transition: border-color 0.15s;
     }
     .user-chip:hover { border-color: var(--accent); color: var(--fg-default); }
+    .pentester-btn {
+      border: 1px solid var(--accent);
+      color: var(--accent);
+    }
+    .pentester-btn:hover, .pentester-btn.active {
+      background: var(--accent);
+      color: #fff;
+    }
     .chip-avatar {
       width: 22px; height: 22px; border-radius: 50%;
       background: linear-gradient(135deg, var(--accent) 0%, var(--purple) 100%);
